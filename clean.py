@@ -168,6 +168,10 @@ def clean():
             logger.info(f"\tNumber of trips lasting over a day: {num_over_day}")
 
 
+        print(f"clean.py script is complete")
+        logger.info(f"clean.py script is complete")
+
+
 
     except Exception as e:
         print(f"An error occurred: {e}")
