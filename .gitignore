@@ -1,0 +1,6 @@
+*.db
+*.ddb
+*.duckdb
+*.parquet
+*.csv
+*.log
