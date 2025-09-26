@@ -19,7 +19,7 @@ def load():
     #months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
     years = ['2024']
-    months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    months = ['01', '02']
 
     # Initialize DuckDB connection
     con = None
@@ -28,6 +28,7 @@ def load():
     try:
         # Connect to local DuckDB instance
         con = duckdb.connect(database = 'emissions.duckdb', read_only = False)
+        print("Connected to DuckDB instance")
         logger.info("Connected to DuckDB instance")
 
         # Drop the tables if they already exist from a previous run
@@ -41,7 +42,9 @@ def load():
             -- Drop the vehicle_emissions table if it exists
             DROP TABLE IF EXISTS vehicle_emissions;
         """)
+        print("Dropped tables if they existed already")
         logger.info("Dropped tables if they existed already")
+        
 
         # Loop through years and months to load the taxi data
         for year in years:
@@ -72,6 +75,7 @@ def load():
                             trip_distance
                         FROM read_parquet('{file_path_green}');
                     """)
+                    print(f"Created yellow_taxi_data and green_taxi_data tables with data from {month}/{year}")
                     logger.info(f"Created yellow_taxi_data and green_taxi_data tables with data from {month}/{year}")
                     time.sleep(30)
 
@@ -96,9 +100,11 @@ def load():
                             trip_distance
                         FROM read_parquet('{file_path_green}');
                     """)
+                    print(f"Appended yellow and green taxi data for {month}/{year} to respective tables")
                     logger.info(f"Appended yellow and green taxi data for {month}/{year} to respective tables")
                     time.sleep(30)
         
+        print("Taxi data loading completed successfully")
         logger.info("Taxi data loading completed successfully")
 
         # Creating vehicle_emissions table using the .csv file
@@ -107,9 +113,10 @@ def load():
             CREATE TABLE vehicle_emissions AS
             SELECT * FROM read_csv('data/vehicle_emissions.csv');       
         """)
+        print("Created vehicle_emissions table from csv file")
         logger.info("Created vehicle_emissions table from csv file")
 
-
+        print("load.py successfully completed data loading")
         logger.info("load.py successfully completed data loading")
 
 
