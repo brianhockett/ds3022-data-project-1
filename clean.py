@@ -18,6 +18,7 @@ def clean():
     try:
         # Connect to local DuckDB instance
         con = duckdb.connect(database = 'emissions.duckdb', read_only = False)
+        print("Connected to DuckDB instance")
         logger.info("Connected to DuckDB instance")
 
 
