@@ -174,6 +174,7 @@ def load():
         logger.info(f"\tCO2 grams per mile: {round(avg_emissions[2], 3)}")
         logger.info(f"\tVehicle Year Average: {round(avg_emissions[3], 1)}")
 
+        print("load.py script is complete")
         logger.info("load.py script is complete")
 
     # Error handling

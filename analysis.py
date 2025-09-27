@@ -39,8 +39,8 @@ def analyze():
                 LIMIT 1;
             """).fetchone()
             pickup_time, dropoff_time, co2_kgs = maxco2_trip
-            print(f"\tThe {color} taxi trip with the single largest carbon produced was the trip with pickup time: {pickup_time}, drop off time: {dropoff_time}, and  {round(co2_kgs, 3)} kgs of carbon produced")
-            logger.info(f"\tThe {color} taxi trip with the single largest carbon produced was the trip with pickup time: {pickup_time}, drop off time: {dropoff_time}, and  {round(co2_kgs, 3)} kgs of carbon produced")
+            print(f"\tThe {color} taxi trip with the single largest carbon produced was the trip with pickup time: {pickup_time}, drop off time: {dropoff_time}, and {round(co2_kgs, 3)} kgs of carbon produced")
+            logger.info(f"\tThe {color} taxi trip with the single largest carbon produced was the trip with pickup time: {pickup_time}, drop off time: {dropoff_time}, and {round(co2_kgs, 3)} kgs of carbon produced")
 
             # 2. Carbon heaviest and lightest hour of the day
             co2_heavy_hour = con.execute(f"""
