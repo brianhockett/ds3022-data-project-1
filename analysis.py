@@ -1,48 +1,50 @@
 # Imports
-import duckdb
-import logging
-import pandas as pd
-import matplotlib.pyplot as plt
+import duckdb          # For interacting with DuckDB databases
+import logging         # For logging messages and errors
+import pandas as pd    # For data manipulation and analysis
+import matplotlib.pyplot as plt  # For plotting data
 
 # Initializing logger
 logging.basicConfig(
-    level = logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s',
-    filename = 'analysis.log'
+    level = logging.INFO, 
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Timestamp, level, and message format
+    filename = 'analysis.log'                            # Log output file
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)  # Create a logger instance
 
-# Function to analyze data
+# Function to analyze taxi carbon emissions data
 def analyze():
 
-    con = None
+    con = None  # Placeholder for DuckDB connection
 
-    # Try to connect to clean tables in duckdb
+    # Try to connect to clean tables in DuckDB
     try:
-        # Connect to local DuckDB instance
+        # Connect to local DuckDB instance (read/write mode)
         con = duckdb.connect(database = 'emissions.duckdb', read_only = False)
         print("Connected to DuckDB instance")
         logger.info("Connected to DuckDB instance")
 
-
+        # Loop over taxi data tables (yellow and green)
         for table, color in zip(['final_yellow_data', 'final_green_data'], ['YELLOW', 'GREEN']):
             
-            print(f"Analysis for {color} taxi data")
+            print(f"Analysis for {color} taxi data:")
             logger.info(f"Analysis for {color} taxi data:")
 
             # 1. Single largest carbon producing trip
             maxco2_trip = con.execute(f"""
-                -- Getting the trip with the max trip_co2_kgs
-                SELECT MAX(trip_co2_kgs)
-                FROM {table}; 
-            """).fetchone()[0]
-            print(f"\tThe single largest carbon producing trip for {color} trips was: {round(maxco2_trip, 3)}")
-            logger.info(f"\tThe single largest carbon producing trip for {color} trips was: {round(maxco2_trip, 3)}")
+                -- Get the trip with the maximum CO2 produced
+                SELECT pickup_time, dropoff_time, trip_co2_kgs
+                FROM {table}
+                ORDER BY trip_co2_kgs DESC
+                LIMIT 1;
+            """).fetchone()
+            pickup_time, dropoff_time, co2_kgs = maxco2_trip
+            print(f"\tThe {color} taxi trip with the single largest carbon produced was the trip with pickup time: {pickup_time}, drop off time: {dropoff_time}, and  {round(co2_kgs, 3)} kgs of carbon produced")
+            logger.info(f"\tThe {color} taxi trip with the single largest carbon produced was the trip with pickup time: {pickup_time}, drop off time: {dropoff_time}, and  {round(co2_kgs, 3)} kgs of carbon produced")
 
-
-
-            # 2. Carbon heaviest hour of the day
+            # 2. Carbon heaviest and lightest hour of the day
             co2_heavy_hour = con.execute(f"""
-                -- Getting the heaviest hour of the day
+                -- Get hour with highest average CO2
                 SELECT hour_of_day
                 FROM {table}
                 GROUP BY hour_of_day
@@ -50,9 +52,8 @@ def analyze():
                 LIMIT 1;
             """).fetchone()[0]
 
-            # 2. Carbon lightest hour of the day
             co2_light_hour = con.execute(f"""
-                -- Getting the lightest hour of the day
+                -- Get hour with lowest average CO2
                 SELECT hour_of_day
                 FROM {table}
                 GROUP BY hour_of_day
@@ -63,21 +64,18 @@ def analyze():
                 print(f"\tThe {cond} carbon hour of the day for {color} trips was: {val}")
                 logger.info(f"\tThe {cond} carbon hour of the day for {color} trips was: {val}")
 
-
-
-            # 3. Carbon heaviest day of the week
+            # 3. Carbon heaviest and lightest day of the week
             co2_heavy_day = con.execute(f"""
-                -- Getting the heaviest day of the week
+                -- Get day of week with highest average CO2
                 SELECT day_of_week
                 FROM {table}
                 GROUP BY day_of_week
                 ORDER BY AVG(trip_co2_kgs) DESC
                 LIMIT 1;
             """).fetchone()[0]
-            
-            # 3. Carbon lightest day of the week
+
             co2_light_day = con.execute(f"""
-                -- Getting the lightest day of the week
+                -- Get day of week with lowest average CO2
                 SELECT day_of_week
                 FROM {table}
                 GROUP BY day_of_week
@@ -88,21 +86,18 @@ def analyze():
                 print(f"\tThe {cond} carbon day of the week for {color} trips was: {val}")
                 logger.info(f"\tThe {cond} carbon day of the week for {color} trips was: {val}")
 
-
-
-            # 4. Carbon heaviest week of the year
+            # 4. Carbon heaviest and lightest week of the year
             co2_heavy_week = con.execute(f"""
-                -- Getting the heaviest week of the year
+                -- Get week of year with highest average CO2
                 SELECT week_of_year
                 FROM {table}
                 GROUP BY week_of_year
                 ORDER BY AVG(trip_co2_kgs) DESC
                 LIMIT 1;
             """).fetchone()[0]
-            
-            # 4. Carbon lightest week of the year
+
             co2_light_week = con.execute(f"""
-                -- Getting the lightest week of the year
+                -- Get week of year with lowest average CO2
                 SELECT week_of_year
                 FROM {table}
                 GROUP BY week_of_year
@@ -113,21 +108,18 @@ def analyze():
                 print(f"\tThe {cond} carbon week of the year for {color} trips was: {val}")
                 logger.info(f"\tThe {cond} carbon week of the year for {color} trips was: {val}")
 
-
-
-            # 5. Carbon heaviest month of the year
+            # 5. Carbon heaviest and lightest month of the year
             co2_heavy_month = con.execute(f"""
-                -- Getting the heaviest month of the year
+                -- Get month of year with highest average CO2
                 SELECT month_of_year
                 FROM {table}
                 GROUP BY month_of_year
                 ORDER BY AVG(trip_co2_kgs) DESC
                 LIMIT 1;
             """).fetchone()[0]
-            
-            # 5. Carbon lightest month of the year
+
             co2_light_month = con.execute(f"""
-                -- Getting the lightest month of the year
+                -- Get month of year with lowest average CO2
                 SELECT month_of_year
                 FROM {table}
                 GROUP BY month_of_year
@@ -138,33 +130,36 @@ def analyze():
                 print(f"\tThe {cond} carbon month of the year for {color} trips was: {val}")
                 logger.info(f"\tThe {cond} carbon month of the year for {color} trips was: {val}")    
 
-            
+        # 6. Time-series plot of total CO2 by year for yellow and green taxis
 
-        # 6. Time-series plot (co2 vs year) by taxi color
+        # Aggregate yellow taxi data per year
         yellow_agg = con.execute("""
-    SELECT
-        EXTRACT(YEAR FROM pickup_time) AS year,
-        'yellow' AS color,
-        SUM(trip_co2_kgs) AS trip_co2_kgs
-    FROM final_yellow_data
-    WHERE EXTRACT(YEAR FROM pickup_time) >= 2023
-    GROUP BY year
-""").df()
+                -- Sum CO2 by year for yellow taxis (2015-2024)
+                SELECT
+                    EXTRACT(YEAR FROM pickup_time) AS year,
+                    'yellow' AS color,
+                    SUM(trip_co2_kgs) AS trip_co2_kgs
+                FROM final_yellow_data
+                WHERE EXTRACT(YEAR FROM pickup_time) >= 2015 AND EXTRACT(YEAR FROM pickup_time) <= 2024
+                GROUP BY year;
+            """).df()
 
+        # Aggregate green taxi data per year
         green_agg = con.execute("""
-    SELECT
-        EXTRACT(YEAR FROM pickup_time) AS year,
-        'green' AS color,
-        SUM(trip_co2_kgs) AS trip_co2_kgs
-    FROM final_green_data
-    WHERE EXTRACT(YEAR FROM pickup_time) >= 2023
-    GROUP BY year
-""").df()
+                -- Sum CO2 by year for green taxis (2015-2024)
+                SELECT
+                    EXTRACT(YEAR FROM pickup_time) AS year,
+                    'green' AS color,
+                    SUM(trip_co2_kgs) AS trip_co2_kgs
+                FROM final_green_data
+                WHERE EXTRACT(YEAR FROM pickup_time) >= 2015 AND EXTRACT(YEAR FROM pickup_time) <= 2024
+                GROUP BY year;
+            """).df()
 
-# Combine the aggregated results
+        # Combine yellow and green data
         yearly_sum = pd.concat([yellow_agg, green_agg], axis=0, ignore_index=True)
 
-        
+        # Plot CO2 time-series by taxi color
         plt.figure(figsize = (12, 8))
         for color in yearly_sum['color'].unique():
             subset = yearly_sum[yearly_sum['color'] == color]
@@ -175,10 +170,15 @@ def analyze():
         plt.legend()
         plt.savefig("./co2_timeseries_analysis.png")
 
+        print("Plotted time-series analysis and saved as co2_timeseries_analysis.png")
+        logger.info("Plotted time-series analysis and saved as co2_timeseries_analysis.png")
+
     except Exception as e:
+        # Handle any errors during analysis
         print(f"An error occurred: {e}")
         logger.error(f"An error occurred: {e}")
 
 
+# Run the analysis function if script is executed directly
 if __name__ == "__main__":
     analyze()
