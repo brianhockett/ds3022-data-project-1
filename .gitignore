@@ -4,5 +4,4 @@
 *.parquet
 *.csv
 *.log
-*.png
 tmp
