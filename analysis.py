@@ -132,43 +132,62 @@ def analyze():
 
         # 6. Time-series plot of total CO2 by year for yellow and green taxis
 
-        # Aggregate yellow taxi data per year
+        # Aggregate yellow taxi data per month
         yellow_agg = con.execute("""
-                -- Sum CO2 by year for yellow taxis (2015-2024)
-                SELECT
-                    EXTRACT(YEAR FROM pickup_time) AS year,
-                    'yellow' AS color,
-                    SUM(trip_co2_kgs) AS trip_co2_kgs
-                FROM final_yellow_data
-                WHERE EXTRACT(YEAR FROM pickup_time) >= 2015 AND EXTRACT(YEAR FROM pickup_time) <= 2024
-                GROUP BY year;
-            """).df()
+            -- Sum CO2 by month for yellow taxis (2015-2024)
+            SELECT
+                EXTRACT(YEAR FROM pickup_time) AS year,
+                EXTRACT(MONTH FROM pickup_time) AS month,
+                'yellow' AS color,
+                SUM(trip_co2_kgs) AS trip_co2_kgs
+            FROM final_yellow_data
+            WHERE EXTRACT(YEAR FROM pickup_time) BETWEEN 2015 AND 2024
+            GROUP BY year, month
+            ORDER BY year, month;
+        """).df()
 
-        # Aggregate green taxi data per year
+        # Aggregate green taxi data per month
         green_agg = con.execute("""
-                -- Sum CO2 by year for green taxis (2015-2024)
-                SELECT
-                    EXTRACT(YEAR FROM pickup_time) AS year,
-                    'green' AS color,
-                    SUM(trip_co2_kgs) AS trip_co2_kgs
-                FROM final_green_data
-                WHERE EXTRACT(YEAR FROM pickup_time) >= 2015 AND EXTRACT(YEAR FROM pickup_time) <= 2024
-                GROUP BY year;
-            """).df()
+            -- Sum CO2 by month for green taxis (2015-2024)
+            SELECT
+                EXTRACT(YEAR FROM pickup_time) AS year,
+                EXTRACT(MONTH FROM pickup_time) AS month,
+                'green' AS color,
+                SUM(trip_co2_kgs) AS trip_co2_kgs
+            FROM final_green_data
+            WHERE EXTRACT(YEAR FROM pickup_time) BETWEEN 2015 AND 2024
+            GROUP BY year, month
+            ORDER BY year, month;
+        """).df()
+
 
         # Combine yellow and green data
-        yearly_sum = pd.concat([yellow_agg, green_agg], axis=0, ignore_index=True)
+        monthly_sum = pd.concat([yellow_agg, green_agg], axis=0, ignore_index=True)
+
+        # Create a proper datetime column (first day of each month)
+        monthly_sum['date'] = pd.to_datetime(
+            monthly_sum['year'].astype(str) + '-' + monthly_sum['month'].astype(str) + '-01'
+        )
 
         # Plot CO2 time-series by taxi color
-        plt.figure(figsize = (12, 8))
-        for color in yearly_sum['color'].unique():
-            subset = yearly_sum[yearly_sum['color'] == color]
-            plt.plot(subset['year'], subset['trip_co2_kgs'], marker='o', label=color, color=color)
+        plt.figure(figsize=(12, 8))
+        for color in monthly_sum['color'].unique():
+            subset = monthly_sum[monthly_sum['color'] == color]
+            plt.plot(subset['date'], subset['trip_co2_kgs'], marker='o', color = color, label=color)
+
         plt.xlabel('Year')
         plt.ylabel('Sum of CO2 Production (Kg)')
-        plt.title("Total CO2 Production by Year")
+        plt.title("Total CO2 Production by Month (2015–2024)")
+
+        # Show only years on x-axis
+        import matplotlib.dates as mdates
+        plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+
         plt.legend()
+        plt.tight_layout()
         plt.savefig("./co2_timeseries_analysis.png")
+
 
         print("Plotted time-series analysis and saved as co2_timeseries_analysis.png")
         logger.info("Plotted time-series analysis and saved as co2_timeseries_analysis.png")
